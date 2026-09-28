@@ -34,7 +34,6 @@ Diagramas completos, justificación de cada decisión y el mapeo a modelos cloud
 apps/
   api/      Backend Express + TypeScript (Dockerizado)
   web/      Frontend React + Vite + TypeScript
-docs/       Documentación de arquitectura, diseño, diagramas, roles y sprints
 infra/      Infraestructura como código (Terraform) — bonus, ver infra/README.md
 .github/    Workflows de CI/CD y plantillas de PR/issues
 ```
