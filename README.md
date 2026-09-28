@@ -72,6 +72,7 @@ npm run dev
 
 | Documento | Contenido |
 |---|---|
+| [**ARQUITECTURA-INICIAL.md**](docs/ARQUITECTURA-INICIAL.md) | **Documento único**: todas las decisiones de arquitectura + diagrama inicial
 | [00-vision.md](docs/00-vision.md) | Problema, usuarios objetivo, propuesta de valor |
 | [01-alcance-mvp.md](docs/01-alcance-mvp.md) | Incluido/excluido del MVP, historias de usuario |
 | [02-arquitectura.md](docs/02-arquitectura.md) | Arquitectura completa y decisiones |
