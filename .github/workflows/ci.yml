@@ -1,0 +1,102 @@
+name: CI
+
+# Se ejecuta en cada Pull Request hacia main y en cada push a main.
+# Solo valida (lint, typecheck, tests, build) — nunca despliega.
+# El despliegue vive en deploy-api.yml y solo corre tras push a main.
+# Ver docs/diagramas/DIA-05-pipeline-cicd.md y docs/adr/0010-cicd-github-actions.md.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  api:
+    name: api — lint, typecheck, test, docker build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Generar cliente de Prisma
+        run: npm run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build de la imagen Docker (validación, sin publicar)
+        run: docker build -t esencia-api:ci .
+
+  web:
+    name: web — lint, typecheck, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  docs:
+    name: docs — validar diagramas Mermaid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar herramienta de diagramas
+        run: npm install --no-save @mermaid-js/mermaid-cli
+
+      - name: Validar sintaxis de todos los diagramas
+        run: node scripts/render-diagrams.mjs --check-only
+
+  secrets-scan:
+    name: gitleaks — escaneo de secretos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Escanear el repositorio en busca de secretos
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

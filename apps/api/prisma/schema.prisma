@@ -1,0 +1,209 @@
+// Esquema inicial de Esencia — ver docs/03-modelo-datos.md para el diagrama ERD
+// completo y la justificación de cada restricción.
+//
+// Para aplicar cambios: `npm run prisma:migrate:dev -- --name <descripcion>`
+// Nunca editar el esquema de la base de datos directamente (docs/08-convenciones.md).
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" cubre el entorno de desarrollo de cada integrante (Windows/macOS/Linux glibc);
+  // "linux-musl-openssl-3.0.x" es el motor que corre dentro del contenedor Docker
+  // (node:20-alpine, con OpenSSL 3.x instalado explícitamente en el Dockerfile).
+  // Sin esto, Prisma intenta un binario incompatible dentro del contenedor y el
+  // proceso revienta con "Error loading shared library libssl.so.1.1".
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  birthDate    DateTime
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  profile       Profile?
+  preference    Preference?
+  refreshTokens RefreshToken[]
+
+  likesSent     Like[]  @relation("LikesSent")
+  likesReceived Like[]  @relation("LikesReceived")
+
+  matchesAsA Match[] @relation("MatchUserA")
+  matchesAsB Match[] @relation("MatchUserB")
+
+  messagesSent Message[] @relation("MessagesSent")
+
+  blocksMade     Block[] @relation("BlocksMade")
+  blocksReceived Block[] @relation("BlocksReceived")
+
+  reportsMade     Report[] @relation("ReportsMade")
+  reportsReceived Report[] @relation("ReportsReceived")
+
+  @@map("users")
+}
+
+model Profile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alias            String
+  city             String
+  gender           String
+  lookingForGender String
+  relationshipType String
+  bio              String   @db.Text
+  isDiscoverable   Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+
+  answers   ProfileAnswer[]
+  interests ProfileInterest[]
+
+  @@map("profiles")
+}
+
+model Prompt {
+  id       String  @id @default(uuid())
+  text     String
+  isActive Boolean @default(true)
+
+  answers ProfileAnswer[]
+
+  @@map("prompts")
+}
+
+model ProfileAnswer {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  promptId  String
+  prompt    Prompt   @relation(fields: [promptId], references: [id])
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+
+  likesCiting Like[] @relation("LikeCitesAnswer")
+
+  @@unique([profileId, promptId])
+  @@map("profile_answers")
+}
+
+model Interest {
+  id   String @id @default(uuid())
+  name String @unique
+
+  profiles ProfileInterest[]
+
+  @@map("interests")
+}
+
+model ProfileInterest {
+  profileId  String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  interestId String
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, interestId])
+  @@map("profile_interests")
+}
+
+model Preference {
+  id               String @id @default(uuid())
+  userId           String @unique
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minAge           Int
+  maxAge           Int
+  city             String
+  lookingForGender String
+
+  @@map("preferences")
+}
+
+enum LikeType {
+  LIKE
+  PASS
+}
+
+model Like {
+  id           String         @id @default(uuid())
+  fromUserId   String
+  fromUser     User           @relation("LikesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId     String
+  toUser       User           @relation("LikesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  type         LikeType
+  answerId     String?
+  citedAnswer  ProfileAnswer? @relation("LikeCitesAnswer", fields: [answerId], references: [id])
+  comment      String?        @db.Text
+  createdAt    DateTime       @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@map("likes")
+}
+
+model Match {
+  id        String    @id @default(uuid())
+  userAId   String
+  userA     User      @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId   String
+  userB     User      @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@map("matches")
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  matchId   String
+  match     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User      @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([matchId, createdAt])
+  @@map("messages")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId String
+  reported   User     @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
+  reason     String
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@map("reports")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  @@map("refresh_tokens")
+}

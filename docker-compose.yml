@@ -1,0 +1,70 @@
+# Entorno de desarrollo local: Postgres + Redis + API en contenedores.
+# El frontend (apps/web) se corre aparte con `npm run dev` (Vite) porque en producción
+# no vive en un contenedor, sino en Vercel — así el entorno local se parece al real.
+#
+# Uso:
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Documentado en docs/02-arquitectura.md y docs/diagramas/DIA-04-despliegue.md
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: esencia-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-esencia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esencia_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-esencia}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - esencia_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-esencia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: esencia-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: esencia-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: ${API_PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://esencia:esencia_dev_password@postgres:5432/esencia?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-cambia_este_valor_en_local}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambia_este_otro_valor}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      # El contenedor usa la imagen de producción (multi-stage, `npm install --omit=dev`,
+      # ver apps/api/Dockerfile), que no incluye pino-pretty (devDependency). Por eso
+      # NODE_ENV es "production" aquí aunque el resto del stack corra en local: así el
+      # logger emite JSON plano en vez de intentar cargar el transporte de pino-pretty,
+      # que solo existe cuando se corre con `npm run dev` fuera de Docker.
+      NODE_ENV: production
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+volumes:
+  esencia_postgres_data:

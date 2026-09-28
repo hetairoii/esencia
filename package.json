@@ -1,0 +1,16 @@
+{
+  "name": "esencia",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Herramientas de raíz del monorepo (no contiene código de aplicación; ver apps/api y apps/web).",
+  "scripts": {
+    "diagrams": "node scripts/render-diagrams.mjs",
+    "diagrams:check": "node scripts/render-diagrams.mjs --check-only"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.1"
+  },
+  "allowScripts": {
+    "puppeteer@19.11.1": true
+  }
+}

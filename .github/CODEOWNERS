@@ -1,0 +1,8 @@
+# Ver docs/08-convenciones.md, sección 3.
+# Reemplazar @arquitecto por el usuario de GitHub real del Arquitecto de Software
+# en cuanto el equipo confirme los roles (docs/06-equipo-roles.md).
+
+docs/adr/                       @arquitecto
+docs/diagramas/                  @arquitecto
+apps/api/prisma/schema.prisma     @arquitecto
+docker-compose.yml                 @arquitecto

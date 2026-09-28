@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build output
+dist/
+build/
+.vercel/
+apps/web/dist/
+apps/api/dist/
+
+# Prisma
+apps/api/prisma/*.db
+apps/api/prisma/migrations/dev/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Testing / coverage
+coverage/
+.nyc_output/
+
+# Diagram exports (se regeneran con `npm run diagrams`)
+docs/diagramas/export/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Terraform
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/.terraform.lock.hcl
+infra/**/*.tfvars
+!infra/**/*.tfvars.example
+
+#docs
+docs/**
