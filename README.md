@@ -1,7 +1,5 @@
 # Esencia
 
-> Nombre provisional del producto — cámbienlo libremente en este archivo y en [`docs/00-vision.md`](docs/00-vision.md) cuando el equipo decida el definitivo.
-
 Aplicación web de citas **sin fotos**. En lugar de deslizar sobre imágenes, las personas se conocen a través de una biografía extensa y respuestas a preguntas guiadas; el match nace de leer y comentar lo que la otra persona escribió, no de su apariencia.
 
 Proyecto integrador de **Computación en la Nube (INFO-02028)** — Escuela de Ingeniería Informática. Ver el enunciado completo en [`docs/referencia/proyectoNube.md`](docs/referencia/proyectoNube.md).
