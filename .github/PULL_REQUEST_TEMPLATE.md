@@ -1,20 +1,20 @@
 ## Qué cambia
 
-<!-- Descripción breve y directa de qué hace este PR. -->
+<!-- Descripción breve de los cambios. -->
 
-## Por qué
+## Motivo
 
-<!-- Qué historia/tarea resuelve. Enlazar el issue: Closes #__ -->
+<!-- Historia o tarea que resuelve. Enlazar el issue: Closes #__ -->
 
-## Cómo probarlo
+## Cómo verificarlo
 
-<!-- Pasos concretos para verificar el cambio (comandos, URL, cuenta de prueba). -->
+<!-- Pasos concretos: comandos, URL o cuenta de prueba. -->
 
 ## Checklist
 
-- [ ] CI en verde (lint, typecheck, tests, build)
-- [ ] Si cambié un componente de arquitectura: actualicé el ADR correspondiente en `docs/adr/`
-- [ ] Si cambié un flujo o la topología: actualicé el diagrama afectado en `docs/diagramas/`
-- [ ] Si cambié variables de entorno: actualicé el/los `.env.example` correspondientes
-- [ ] No incluí secretos ni credenciales reales en el diff
-- [ ] Sigo las convenciones de `docs/08-convenciones.md` (commits, nombres de rama, estilo)
+- [ ] CI en verde (lint, typecheck, pruebas y build)
+- [ ] ADR actualizado en `docs/adr/` si cambió un componente de arquitectura
+- [ ] Diagrama actualizado en `docs/diagramas/` si cambió un flujo o la topología
+- [ ] `.env.example` actualizado si cambiaron las variables de entorno
+- [ ] Sin secretos ni credenciales reales en el diff
+- [ ] Cumple las convenciones de `docs/08-convenciones.md` (commits, ramas y estilo)

@@ -1,6 +1,6 @@
 ---
 name: Historia de usuario
-about: Una historia de usuario del backlog (docs/01-alcance-mvp.md)
+about: Historia de usuario del backlog (docs/01-alcance-mvp.md)
 title: "HU-XX · <descripción corta>"
 labels: historia
 ---
@@ -21,7 +21,7 @@ Cuando ...
 Entonces ...
 ```
 
-## Endpoint(s) / evento(s) involucrados
+## Endpoints o eventos involucrados
 
 <!-- Ver docs/04-api.md -->
 
@@ -29,10 +29,10 @@ Entonces ...
 
 - [ ] Criterios de aceptación definidos
 - [ ] Caso de uso identificado
-- [ ] Endpoint(s) identificados
+- [ ] Endpoints identificados
 - [ ] Estimación asignada
 - [ ] Responsable asignado
 
 ## Definition of Done
 
-Ver `docs/08-convenciones.md` y `docs/07-plan-trabajo.md`, sección 4.
+Ver `docs/07-plan-trabajo.md`, sección 4, y `docs/08-convenciones.md`.

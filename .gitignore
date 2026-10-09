@@ -47,5 +47,9 @@ infra/**/.terraform.lock.hcl
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
 
-#docs
+# Documentos
 docs/**
+!docs/**/
+!docs/**/*.pdf
+
+infra/**

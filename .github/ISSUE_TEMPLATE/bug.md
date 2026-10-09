@@ -1,13 +1,13 @@
 ---
 name: Bug
-about: Un defecto encontrado en la aplicación desplegada o en desarrollo
+about: Defecto encontrado en la aplicación desplegada o en desarrollo
 title: "[Bug] <descripción corta>"
 labels: bug
 ---
 
 ## Descripción
 
-<!-- Qué está pasando. -->
+<!-- Qué ocurre. -->
 
 ## Pasos para reproducir
 
@@ -26,7 +26,7 @@ labels: bug
 
 ## Severidad
 
-- [ ] Bloqueante (rompe un flujo crítico del MVP)
+- [ ] Bloqueante (interrumpe un flujo crítico del MVP)
 - [ ] Alta
 - [ ] Media
 - [ ] Baja
