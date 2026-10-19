@@ -12,6 +12,15 @@ Proyecto integrador de la asignatura **Computación en la Nube (INFO-02028)** �
 
 ---
 
+## Integrantes
+Matias Silveira
+Andrea Mendoza
+Daniela Silva
+Samuel Velásquez
+Rosxana Medero
+
+---
+
 ## Tabla de contenidos
 
 1. [Propuesta de valor](#1-propuesta-de-valor)
