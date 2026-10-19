@@ -13,10 +13,10 @@ Proyecto integrador de la asignatura **Computación en la Nube (INFO-02028)** �
 ---
 
 ## Integrantes
-Matias Silveira - C.I. 31.020.586
-Andrea Mendoza - C.I. 30.032.234
-Daniela Silva - C.I. 30.225.188
-Rosxana Medero - C.I. 29.969.634
+Matias Silveira - C.I. 31.020.586  
+Andrea Mendoza - C.I. 30.032.234  
+Daniela Silva - C.I. 30.225.188  
+Rosxana Medero - C.I. 29.969.634  
 Samuel Velásquez - C.I. 29.966.921
 
 ---
