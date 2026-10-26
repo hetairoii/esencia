@@ -16,7 +16,7 @@ import { authRouter } from "./modules/auth/auth.routes.js";
  * directamente en las pruebas (supertest) sin levantar un socket real ni
  * el servidor de Socket.IO.
  */
-export function createApp(): Express {
+export function createApp(extendRoutes?: (app: Express) => void): Express {
   const app = express();
 
   // Render (y Vercel) terminan TLS en un proxy: sin esto `req.ip` sería la del proxy
@@ -43,6 +43,10 @@ export function createApp(): Express {
   // sus routers se montan aquí, por ejemplo:
   // app.use("/api/v1", usersRouter);
   // ...
+
+  // Gancho para montar rutas adicionales antes del 404 (lo usan las pruebas para
+  // registrar rutas protegidas de ejemplo sin tocar la aplicación real).
+  extendRoutes?.(app);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Recurso no encontrado" } });
