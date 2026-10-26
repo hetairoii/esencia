@@ -1,27 +1,50 @@
 name: Deploy API
 
-# Solo corre tras un push a main (es decir, después de que CI ya pasó en el PR
-# correspondiente). Construye la imagen de producción, la publica en GHCR,
-# aplica las migraciones de Prisma y dispara el deploy hook de Render.
-# El frontend se despliega aparte, vía la integración nativa de Vercel con GitHub.
-# Ver docs/diagramas/DIA-05-pipeline-cicd.md y docs/05-modelos-cloud.md.
+# Despliegue continuo de la API. Solo se ejecuta cuando el workflow CI termina en
+# verde sobre `main` (o manualmente), y despliega exactamente el commit que pasó el CI:
+#   1. construye la imagen y la publica en GHCR (:<sha> y :latest);
+#   2. aplica las migraciones de Prisma y el seed (idempotente) en Supabase;
+#   3. dispara el deploy hook de Render indicando la imagen :<sha>;
+#   4. comprueba que la API desplegada responde (smoke test).
+# El frontend se despliega aparte, con la integración nativa de Vercel con GitHub.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL, DIRECT_URL, RENDER_DEPLOY_HOOK_URL
+# Variable: PRODUCTION_API_URL (p. ej. https://esencia-api.onrender.com)
+# Si falta alguno, el paso correspondiente se omite con un aviso en lugar de fallar,
+# para permitir un primer arranque gradual. Ver docs/diagramas/DIA-05-pipeline-cicd.md.
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "apps/api/**"
-      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
+# Un solo despliegue a la vez; uno en curso no se cancela (podría dejar la BD a medias).
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/esencia-api
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
 jobs:
-  build-and-deploy:
+  deploy:
+    name: build, migrar, desplegar y verificar
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
 
       - name: Autenticarse en GHCR
         uses: docker/login-action@v3
@@ -30,29 +53,70 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/setup-buildx-action@v3
+
       - name: Build y push de la imagen
         uses: docker/build-push-action@v6
         with:
           context: apps/api
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/esencia-api:latest
-            ghcr.io/${{ github.repository_owner }}/esencia-api:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ env.SHA }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
 
-      - name: Instalar dependencias de la API (para prisma migrate)
+      - name: Aplicar migraciones y seed en producción
         working-directory: apps/api
-        run: npm ci
-
-      - name: Aplicar migraciones en producción
-        working-directory: apps/api
-        run: npm run prisma:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$DIRECT_URL" ]; then
+            echo "::warning::Faltan los secrets DATABASE_URL o DIRECT_URL: se omiten las migraciones."
+            exit 0
+          fi
+          npm ci
+          npm run prisma:migrate:deploy
+          npm run prisma:seed
 
-      - name: Disparar el deploy hook de Render
-        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Disparar el despliegue en Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::Falta el secret RENDER_DEPLOY_HOOK_URL: no se despliega en Render."
+            exit 0
+          fi
+          # Se despliega la imagen exacta que acaba de construirse (no :latest).
+          IMG=$(printf '%s' "${IMAGE}:${SHA}" | sed 's#/#%2F#g; s#:#%3A#g')
+          curl -fsS -X POST "${HOOK}&imgURL=${IMG}"
+          echo
+
+      - name: Smoke test de la API desplegada
+        env:
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::warning::Falta la variable PRODUCTION_API_URL: se omite la verificación."
+            exit 0
+          fi
+          API_URL="${API_URL%/}"
+          # El plan gratuito de Render tarda en arrancar en frío y en aplicar la nueva imagen.
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 30 "$API_URL/api/v1/health" > /dev/null; then
+              echo "health OK (intento $i)"
+              break
+            fi
+            [ "$i" = 12 ] && { echo "::error::/health no respondió"; exit 1; }
+            sleep 15
+          done
+          # /ready responde 503 si la base de datos o Redis fallan, lo que hace fallar el job.
+          curl -fsS --max-time 30 "$API_URL/api/v1/ready"
+          echo
