@@ -11,6 +11,7 @@ export default defineConfig({
     // de error. Ver docs/apps/api/README.md.
     env: {
       DATABASE_URL: "postgresql://esencia:esencia_dev_password@localhost:5432/esencia_test?schema=public",
+      DIRECT_URL: "postgresql://esencia:esencia_dev_password@localhost:5432/esencia_test?schema=public",
       REDIS_URL: "redis://localhost:6379",
       JWT_ACCESS_SECRET: "test-access-secret-not-for-production",
       JWT_REFRESH_SECRET: "test-refresh-secret-not-for-production",
