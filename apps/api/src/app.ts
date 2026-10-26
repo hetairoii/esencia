@@ -9,6 +9,7 @@ import { logger } from "./lib/logger.js";
 import { AppError } from "./lib/errors.js";
 import { zodDetails } from "./lib/validate.js";
 import { healthRouter } from "./modules/health/health.routes.js";
+import { authRouter } from "./modules/auth/auth.routes.js";
 
 /**
  * Configuración de Express. Separado de index.ts para poder importar `app`
@@ -36,10 +37,10 @@ export function createApp(): Express {
   // Los endpoints de salud viven en la raíz de /api/v1 sin autenticación,
   // ver docs/04-api.md, sección 2.
   app.use("/api/v1", healthRouter);
+  app.use("/api/v1/auth", authRouter);
 
   // A medida que se implementen los módulos (docs/07-plan-trabajo.md),
   // sus routers se montan aquí, por ejemplo:
-  // app.use("/api/v1/auth", authRouter);
   // app.use("/api/v1", usersRouter);
   // ...
 
