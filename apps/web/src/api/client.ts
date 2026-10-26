@@ -3,7 +3,7 @@
  * accessToken (memoria), refresh automático y los endpoints de cada módulo
  * (ver docs/04-api.md).
  */
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const API_URL = import.meta.env.VITE_API_URL ?? ""; // vacío: mismo origen, vía el proxy de Vercel/Vite
 
 export interface HealthResponse {
   status: "ok";
