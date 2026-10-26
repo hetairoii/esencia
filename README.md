@@ -220,14 +220,42 @@ La plantilla de Pull Request, las plantillas de issues (historia de usuario y bu
 
 ## 9. Despliegue
 
+```
+Navegador ──► Vercel (SPA + rewrite /api/*) ──► Render (API en Docker) ──► Supabase (PostgreSQL)
+                                                                      └──► Upstash (Redis)
+```
+
+El navegador solo conoce el dominio de Vercel, que sirve la SPA y reenvía `/api/*` a la API ([`apps/web/vercel.json`](apps/web/vercel.json)). Con ello la cookie de sesión es de primera parte y no se necesita CORS entre frontend y API.
+
 | Componente | Destino | Mecanismo |
 |---|---|---|
-| Frontend | Vercel | Integración nativa con GitHub; configuración en [`apps/web/vercel.json`](apps/web/vercel.json) |
-| API | Render | Workflow [`deploy-api.yml`](.github/workflows/deploy-api.yml): construye la imagen, la publica en GHCR (`:latest` y `:<sha>`), aplica migraciones de Prisma y dispara el *deploy hook* |
-| Base de datos | Supabase (PostgreSQL 16) | Servicio administrado |
+| Frontend | Vercel | Integración nativa con GitHub (*root directory* `apps/web`) |
+| API | Render | Servicio declarado en [`render.yaml`](render.yaml) que ejecuta la imagen publicada en GHCR |
+| Base de datos | Supabase (PostgreSQL 16) | Servicio administrado; *Transaction pooler* para la aplicación y *Session pooler* para las migraciones |
 | Caché | Upstash (Redis) | Servicio administrado |
 
-El despliegue de la API se activa únicamente tras un push a `main` que modifique `apps/api/**`, una vez que la integración continua ha validado el cambio. El diagrama del pipeline está en [`DIA-05`](docs/diagramas/DIA-05-pipeline-cicd.md) y el de despliegue en [`DIA-04`](docs/diagramas/DIA-04-despliegue.md).
+### Despliegue continuo
+
+El workflow [`deploy-api.yml`](.github/workflows/deploy-api.yml) se ejecuta cuando el CI termina en verde sobre `main` (o de forma manual) y despliega exactamente ese commit:
+
+1. Construye la imagen y la publica en GHCR (`:<sha>` y `:latest`).
+2. Aplica las migraciones de Prisma y el seed (idempotente) en Supabase.
+3. Dispara el *deploy hook* de Render indicando la imagen `:<sha>`.
+4. Verifica la API desplegada (`/health` y `/ready`).
+
+Cada paso se omite con un aviso si falta su secret, lo que permite un primer arranque gradual.
+
+| Tipo | Nombre | Dónde se configura |
+|---|---|---|
+| Secret de GitHub | `DATABASE_URL`, `DIRECT_URL` | Settings → Secrets and variables → Actions |
+| Secret de GitHub | `RENDER_DEPLOY_HOOK_URL` | Ídem |
+| Variable de GitHub | `PRODUCTION_API_URL` | Settings → Secrets and variables → Actions → Variables |
+| Variables de Render | `DATABASE_URL`, `DIRECT_URL`, `REDIS_URL`, `CORS_ORIGIN` | Se solicitan al crear el Blueprint |
+| Variables de Render (fijas) | `NODE_ENV`, `TRUST_PROXY=2`, `COOKIE_SAME_SITE`, `LOG_LEVEL`, `JWT_*_SECRET` (generados) | [`render.yaml`](render.yaml) |
+
+`TRUST_PROXY=2` es imprescindible: hay dos proxies (Vercel y Render) y, con otro valor, el rate limit vería la IP de Vercel y bloquearía a todos los usuarios a la vez.
+
+El diagrama del pipeline está en [`DIA-05`](docs/diagramas/DIA-05-pipeline-cicd.md) y el de despliegue en [`DIA-04`](docs/diagramas/DIA-04-despliegue.md).
 
 ## 10. Hoja de ruta
 

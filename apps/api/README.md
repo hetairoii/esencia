@@ -51,6 +51,16 @@ src/
 
 Cada módulo pendiente de implementación incluye un `README.md` con su responsabilidad. El sprint de implementación de cada uno está en [`docs/07-plan-trabajo.md`](../../docs/07-plan-trabajo.md).
 
+## Variables de entorno de producción
+
+Además de las de `.env.example`, la API lee:
+
+| Variable | Valor por defecto | Descripción |
+|---|---|---|
+| `TRUST_PROXY` | `1` | Número de proxies delante de la API (`2` en producción: Vercel → Render). Condiciona `req.ip` y, con ello, el rate limit. |
+| `COOKIE_SAME_SITE` | `lax` | `SameSite` de la cookie de sesión. Basta `lax` con el proxy de Vercel; `none` solo si el frontend llama a la API en otro dominio. |
+| `CORS_ORIGIN` | `http://localhost:5173` | Orígenes permitidos (REST y Socket.IO); admite una lista separada por comas. |
+
 ## Base de datos local
 
 ```bash
