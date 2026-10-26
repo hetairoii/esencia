@@ -51,10 +51,26 @@ src/
 
 Cada módulo pendiente de implementación incluye un `README.md` con su responsabilidad. El sprint de implementación de cada uno está en [`docs/07-plan-trabajo.md`](../../docs/07-plan-trabajo.md).
 
+## Base de datos local
+
+```bash
+docker compose up -d postgres redis        # desde la raíz del repositorio
+npm run prisma:migrate:dev                 # aplica las migraciones (en apps/api)
+npm run prisma:seed                        # catálogo de prompts e intereses (idempotente)
+```
+
+Si el puerto 5432 de tu máquina está ocupado (por ejemplo, por un PostgreSQL instalado en Windows), define `POSTGRES_PORT=5433` en el `.env` de la raíz y ajusta el puerto en `DATABASE_URL` y `DIRECT_URL` de `apps/api/.env`.
+
 ## Pruebas
 
 ```bash
 npm test
 ```
 
-Actualmente existe la prueba de `health` ([`tests/health.test.ts`](tests/health.test.ts)); cada módulo incorpora las suyas al implementarse ([`docs/08-convenciones.md`](../../docs/08-convenciones.md)).
+Las pruebas de integración usan un PostgreSQL real, en el schema `test` (no tocan tus datos de desarrollo), y aplican las migraciones automáticamente al empezar. Requieren `docker compose up -d postgres`. Si usas otro puerto, define `TEST_DATABASE_URL`:
+
+```bash
+TEST_DATABASE_URL="postgresql://esencia:esencia_dev_password@localhost:5433/esencia?schema=test" npm test
+```
+
+Cada módulo incorpora sus pruebas al implementarse ([`docs/08-convenciones.md`](../../docs/08-convenciones.md)); `tests/auth.test.ts` sirve de ejemplo de prueba de integración con Supertest.
