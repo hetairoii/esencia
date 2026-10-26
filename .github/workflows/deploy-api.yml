@@ -45,13 +45,14 @@ jobs:
 
       - name: Instalar dependencias de la API (para prisma migrate)
         working-directory: apps/api
-        run: npm install --omit=dev
+        run: npm ci
 
       - name: Aplicar migraciones en producción
         working-directory: apps/api
         run: npm run prisma:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Disparar el deploy hook de Render
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
