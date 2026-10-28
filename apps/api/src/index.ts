@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createServer } from "node:http";
 import { Server as SocketIOServer } from "socket.io";
-import { env } from "./config/env.js";
+import { corsOrigins, env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { createApp } from "./app.js";
 
@@ -16,7 +16,7 @@ const httpServer = createServer(app);
  * el módulo `chat` (ver docs/07-plan-trabajo.md y ADR-0005).
  */
 export const io = new SocketIOServer(httpServer, {
-  cors: { origin: env.CORS_ORIGIN, credentials: true },
+  cors: { origin: corsOrigins, credentials: true },
 });
 
 httpServer.listen(env.PORT, () => {

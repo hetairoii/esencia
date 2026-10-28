@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { ZodError } from "zod";
 import { pinoHttp } from "pino-http";
-import { env } from "./config/env.js";
+import { corsOrigins, env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { AppError } from "./lib/errors.js";
 import { zodDetails } from "./lib/validate.js";
@@ -19,20 +19,20 @@ import { authRouter } from "./modules/auth/auth.routes.js";
 export function createApp(extendRoutes?: (app: Express) => void): Express {
   const app = express();
 
-  // Render (y Vercel) terminan TLS en un proxy: sin esto `req.ip` sería la del proxy
-  // y las cookies `Secure` no se emitirían correctamente.
-  app.set("trust proxy", 1);
+  // Delante de la API hay proxies (en producción, Vercel y Render). `TRUST_PROXY` indica
+  // cuántos: así `req.ip` es la del usuario real y el rate limit y los logs son correctos.
+  app.set("trust proxy", env.TRUST_PROXY);
 
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: corsOrigins,
       credentials: true,
     }),
   );
   app.use(express.json());
   app.use(cookieParser());
-  app.use(pinoHttp({ logger }));
+  app.use(pinoHttp({ logger, customProps: (req) => ({ clientIp: req.ip }) }));
 
   // Los endpoints de salud viven en la raíz de /api/v1 sin autenticación,
   // ver docs/04-api.md, sección 2.

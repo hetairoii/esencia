@@ -1,0 +1,36 @@
+# Blueprint de Render: declara el servicio de la API como código.
+# Render descarga la imagen publicada en GHCR por .github/workflows/deploy-api.yml
+# (la imagen debe ser pública). Las variables con `sync: false` se piden al crear el
+# Blueprint y nunca se guardan en el repositorio.
+# Ver docs/05-modelos-cloud.md y el README (sección «Despliegue»).
+services:
+  - type: web
+    name: esencia-api
+    runtime: image
+    image:
+      url: ghcr.io/hetairoii/esencia-api:latest
+    plan: free
+    region: virginia
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Dos proxies delante de la API: Vercel (rewrite) y el balanceador de Render.
+      - key: TRUST_PROXY
+        value: "2"
+      - key: COOKIE_SAME_SITE
+        value: lax
+      - key: LOG_LEVEL
+        value: info
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: DATABASE_URL   # Supabase, Transaction pooler (puerto 6543, ?pgbouncer=true)
+        sync: false
+      - key: DIRECT_URL     # Supabase, Session pooler (puerto 5432)
+        sync: false
+      - key: REDIS_URL      # Upstash (rediss://…)
+        sync: false
+      - key: CORS_ORIGIN    # URL de Vercel, sin barra final
+        sync: false

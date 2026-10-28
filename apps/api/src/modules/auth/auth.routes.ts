@@ -8,25 +8,28 @@ import type { AuthResult } from "./auth.service.js";
 
 export const REFRESH_COOKIE = "refreshToken";
 const COOKIE_PATH = "/api/v1/auth";
-const isProd = env.NODE_ENV === "production";
+const sameSite = env.COOKIE_SAME_SITE;
+// `Secure` es obligatorio en producción y siempre que SameSite sea `none`.
+const secure = env.NODE_ENV === "production" || sameSite === "none";
 
 /**
- * Cookie del refresh token. En producción el frontend (Vercel) y la API (Render) viven en
- * dominios distintos, por lo que la cookie debe ser `SameSite=None; Secure` (ADR-0008).
+ * Cookie del refresh token. En producción el navegador accede a la API a través del proxy
+ * de Vercel (mismo dominio), por lo que basta `SameSite=Lax; Secure`; si el frontend llamara
+ * a la API en otro dominio habría que usar COOKIE_SAME_SITE=none (ADR-0008).
  * `path` la limita a los endpoints de auth: no viaja en el resto de las peticiones.
  */
 function setRefreshCookie(res: Response, result: AuthResult) {
   res.cookie(REFRESH_COOKIE, result.refreshToken, {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure,
+    sameSite,
     path: COOKIE_PATH,
     expires: result.refreshExpiresAt,
   });
 }
 
 function clearRefreshCookie(res: Response) {
-  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, secure: isProd, sameSite: isProd ? "none" : "lax", path: COOKIE_PATH });
+  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, secure, sameSite, path: COOKIE_PATH });
 }
 
 const body = (result: AuthResult) => ({ accessToken: result.accessToken, user: result.user });
