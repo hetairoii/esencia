@@ -15,6 +15,21 @@ jobs:
   api:
     name: api — lint, typecheck, test, docker build
     runs-on: ubuntu-latest
+    # Postgres real para las pruebas de integración (schema "test", migrado por el globalSetup de vitest).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: esencia
+          POSTGRES_PASSWORD: esencia_dev_password
+          POSTGRES_DB: esencia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U esencia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: apps/api
